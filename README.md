@@ -1,7 +1,7 @@
 # WNModel
 
 # Overview
-using objc runtime to convert json data to model
+using objc runtime to convert `NSDictionary` to model
 
 # Usage
 1. copy __*WNModel*__ folder(in __*wnmodel*__ folder) to your project
