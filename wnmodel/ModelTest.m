@@ -10,7 +10,7 @@
 
 @implementation ModelTest
 
-+ (NSArray *)modelRules;
++ (NSArray *)modelRules
 {
     WNModelRulePropertyMapper *rule1 = [WNModelRulePropertyMapper new];
     rule1.propertyMap = @{@"testId": @"id",
