@@ -10,7 +10,7 @@
 
 @interface WNModelRule : NSObject
 
-// if rule is exclusive and matched, the following rules in `modelRules` will not be exec for the property
+// if rule is exclusive and matched, the following rules in `modelRules` will not be exec for the property
 @property (nonatomic, assign, getter=isExclusive) BOOL exclusive; //Default YES
 
 - (BOOL)match:(NSString *)property;

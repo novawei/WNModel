@@ -24,7 +24,7 @@ static dispatch_queue_t wn_modelQueue;
 #ifdef MULTITHREAD_SUPPORT
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
-        wn_modelQueue = dispatch_queue_create("com.novawei.wnmodel", DISPATCH_QUEUE_SERIAL);
+        wn_modelQueue = dispatch_queue_create("com.novawei.model", DISPATCH_QUEUE_SERIAL);
 #endif
         wn_propertiesOfClass = [[NSMutableDictionary alloc] initWithCapacity:10];
         wn_rulesOfClass = [[NSMutableDictionary alloc] initWithCapacity:10];
@@ -57,18 +57,27 @@ static dispatch_queue_t wn_modelQueue;
     });
 #endif
     if (properties == nil) {
-        unsigned int count = 0;
-        objc_property_t *objcProperties = class_copyPropertyList(self, &count);
-        properties = [[NSMutableArray alloc] initWithCapacity:count];
-        for (int i = 0; i < count; i++) {
-            objc_property_t p = objcProperties[i];
-            const char *c_name = property_getName(p);
-            NSString *name = [[NSString alloc] initWithCString:c_name encoding:NSUTF8StringEncoding];
-            if (![name hasPrefix:WNModelExcludedPropertyPrefix]) {
-                [properties addObject:name];
+        properties = [[NSMutableArray alloc] initWithCapacity:10];
+        Class nextClass = self;
+        while ([nextClass isSubclassOfClass:[WNModel class]]) {
+            unsigned int count = 0;
+            objc_property_t *objcProperties = class_copyPropertyList(nextClass, &count);
+            for (int i = 0; i < count; i++) {
+                objc_property_t p = objcProperties[i];
+                const char *c_name = property_getName(p);
+                NSString *name = [[NSString alloc] initWithCString:c_name encoding:NSUTF8StringEncoding];
+                if (![name hasPrefix:WNModelExcludedPropertyPrefix]
+                    && ![name isEqualToString:@"hash"]
+                    && ![name isEqualToString:@"superclass"]
+                    && ![name isEqualToString:@"description"]
+                    && ![name isEqualToString:@"debugDescription"]) {
+                    [properties addObject:name];
+                }
             }
+            free(objcProperties);
+            // next
+            nextClass = [nextClass superclass];
         }
-        free(objcProperties);
 #ifdef MULTITHREAD_SUPPORT
         dispatch_barrier_async(wn_modelQueue, ^{
 #endif
@@ -143,5 +152,25 @@ static dispatch_queue_t wn_modelQueue;
     }
     return instance;
 }
+
+- (id)valueForUndefinedKey:(NSString *)key
+{
+    NSLog(@"ERROR! UndefinedKey : \"%@\"", key);
+    return nil;
+}
+
+#ifdef DEBUG
+- (NSString *)description
+{
+    NSArray *props = [[self class] modelProperties];
+    NSMutableString *desc = [[NSMutableString alloc] initWithString:NSStringFromClass([self class])];
+    [desc appendFormat:@"{"];
+    for (NSString *prop in props) {
+        [desc appendFormat:@"%@: %@, ", prop, [self valueForKey:prop]];
+    }
+    [desc appendFormat:@"}"];
+    return desc;
+}
+#endif
 
 @end
